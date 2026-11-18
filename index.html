@@ -8,6 +8,7 @@
   <!-- 2. SEO и Заголовок -->
   <title>Quick Legal Docs Builder — генератор договоров</title>
   <meta name="description" content="Быстрое создание договоров, NDA и актов для фрилансеров и малого бизнеса. Заполните форму и скачайте PDF.">
+  <meta name="keywords" content="генератор договоров, договор подряда, NDA, акт выполненных работ, договор для фрилансера, скачать договор PDF, онлайн генератор документов">
   <meta name="google-site-verification" content="tIZc0s2PBpv1oLkmHjm_obQxUIZFeo4upI1TeYpnoTQ" />
 
   <!-- 3. Open Graph (Facebook, VK, Telegram) -->
@@ -16,7 +17,6 @@
   <meta property="og:title" content="Quick Legal Docs — генератор договоров" />
   <meta property="og:description" content="Быстрое создание договоров, NDA и актов. Заполните форму и скачайте PDF." />
   <meta property="og:locale" content="ru_RU" />
-  <!-- Не забудьте загрузить preview.jpg в репозиторий! -->
   <meta property="og:image" content="https://timaafona-hash.github.io/QuickLegal-Docs/preview.jpg" />
 
   <!-- 4. Twitter (X) -->
@@ -31,7 +31,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Ваши стили начинаются здесь... */
     /* --- ПЕРЕМЕННЫЕ ДЛЯ СВЕТЛОЙ ТЕМЫ --- */
     :root {
       --primary: #2563eb;
@@ -77,7 +76,6 @@
       background: var(--card);
       border-bottom: 1px solid var(--border);
       padding: 16px 0;
-      margin-bottom: 32px;
       transition: background-color 0.3s, border-color 0.3s;
     }
     .header-flex { display: flex; justify-content: space-between; align-items: center; }
@@ -101,12 +99,33 @@
     }
     .theme-toggle:hover { background: var(--border); }
 
+    /* SEO-блок */
+    .seo-intro {
+      padding: 32px 0 16px;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .seo-intro h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+    .seo-intro p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
     /* Основная сетка */
     .app-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 32px;
       align-items: start;
+      padding-top: 32px;
       padding-bottom: 64px;
     }
 
@@ -185,8 +204,8 @@
     
     /* Стили для документа (чтобы в PDF было красиво) */
     .document-body {
-      font-size: 0.95rem; line-height: 1.6; color: #000; /* Текст всегда черный в превью */
-      background: #fff; /* Белый фон для документа, чтобы в PDF было корректно */
+      font-size: 0.95rem; line-height: 1.6; color: #000;
+      background: #fff;
       padding: 20px;
       border-radius: 8px;
     }
@@ -204,6 +223,7 @@
     @media (max-width: 900px) {
       .app-grid { grid-template-columns: 1fr; }
       .preview-container { position: static; max-height: none; }
+      .seo-intro h1 { font-size: 1.5rem; }
     }
   </style>
 </head>
@@ -221,6 +241,14 @@
     </div>
   </div>
 </header>
+
+<!-- НОВЫЙ SEO БЛОК: Видимый текст для Google -->
+<div class="container">
+  <div class="seo-intro">
+    <h1>Онлайн-генератор договоров для фрилансеров и бизнеса</h1>
+    <p>Создайте договор подряда, соглашение о неразглашении (NDA) или акт выполненных работ за 2 минуты. Заполните форму, нажмите кнопку и скачайте готовый PDF-документ. Бесплатно, без регистрации и без помощи юриста.</p>
+  </div>
+</div>
 
 <div class="container app-grid">
   <div class="panel">
