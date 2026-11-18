@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Legal Docs Builder — генератор договоров</title>
+  <meta name="description" content="Быстрое создание договоров, NDA и актов для фрилансеров и малого бизнеса. Заполните форму и скачайте PDF.">
+  
+  <!-- Подключение библиотек для PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* --- ПЕРЕМЕННЫЕ ДЛЯ СВЕТЛОЙ ТЕМЫ --- */
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    /* --- ПЕРЕМЕННЫЕ ДЛЯ ТЕМНОЙ ТЕМЫ --- */
+    [data-theme="dark"] {
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #f87171;
+      --success: #34d399;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    
+    /* Шапка */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+      margin-bottom: 32px;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .header-flex { display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-weight: 800; font-size: 1.25rem; color: var(--primary); text-decoration: none; }
+    .logo span { color: var(--text); }
+
+    /* Переключатель темы */
+    .theme-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); }
+
+    /* Основная сетка */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+      padding-bottom: 64px;
+    }
+
+    /* Панели */
+    .panel {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .panel h2 {
+      font-size: 1.25rem;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      color: var(--text);
+    }
+
+    /* Форма */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+    .form-group label .req { color: var(--danger); }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    
+    .tooltip-icon {
+      display: inline-block; width: 16px; height: 16px; background: var(--text-muted);
+      color: var(--bg); border-radius: 50%; text-align: center; line-height: 16px;
+      font-size: 10px; cursor: help; margin-left: 4px; position: relative;
+    }
+    .tooltip-icon:hover::after {
+      content: attr(data-tip); position: absolute; bottom: 100%; left: 50%;
+      transform: translateX(-50%); background: var(--text); color: var(--bg);
+      padding: 6px 10px; border-radius: 6px; font-size: 0.75rem;
+      white-space: nowrap; z-index: 10; font-weight: normal;
+    }
+
+    /* Кнопки */
+    .btn {
+      background: var(--primary); color: #fff; border: none;
+      padding: 12px 20px; border-radius: 8px; font-weight: 600;
+      font-size: 1rem; cursor: pointer; transition: background 0.2s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--border); }
+    .btn-group { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .btn-group .btn { flex: 1; min-width: 140px; }
+
+    /* Превью */
+    .preview-container {
+      background: var(--card); border-radius: 16px; padding: 40px;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      position: sticky; top: 24px; max-height: calc(100vh - 48px);
+      overflow-y: auto; transition: background-color 0.3s, border-color 0.3s;
+    }
+    .preview-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    
+    /* Стили для документа (чтобы в PDF было красиво) */
+    .document-body {
+      font-size: 0.95rem; line-height: 1.6; color: #000; /* Текст всегда черный в превью */
+      background: #fff; /* Белый фон для документа, чтобы в PDF было корректно */
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .document-body h1 { font-size: 1.3rem; text-align: center; margin-bottom: 24px; text-transform: uppercase; }
+    .document-body h3 { font-size: 1rem; margin: 20px 0 8px; font-weight: bold; }
+    .document-body p { margin-bottom: 12px; text-align: justify; }
+    .document-body .placeholder { color: #888; font-style: italic; }
+    .document-body .filled { font-weight: bold; border-bottom: 1px solid #000; }
+
+    /* Утилиты */
+    .hidden { display: none !important; }
+    .notice { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
+    .notice-success { background: #dcfce7; color: #166534; }
+
+    @media (max-width: 900px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .preview-container { position: static; max-height: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container header-flex">
+    <a href="#" class="logo">Quick<span>Legal Docs</span></a>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
+        <span id="themeIcon">🌙</span> <span id="themeText">Темная тема</span>
+      </button>
+      <button class="btn btn-outline" onclick="importTemplate()" title="Загрузить шаблон">📂 Импорт</button>
+      <button class="btn btn-outline" onclick="saveTemplate()" title="Сохранить шаблон">💾 Экспорт</button>
+    </div>
+  </div>
+</header>
+
+<div class="container app-grid">
+  <div class="panel">
+    <h2>1. Данные для документа</h2>
+    
+    <div class="form-group">
+      <label>Выберите шаблон <span class="req">*</span></label>
+      <select id="templateSelect" onchange="changeTemplate()">
+        <option value="contract">Договор подряда</option>
+        <option value="nda">Соглашение о неразглашении (NDA)</option>
+        <option value="act">Акт выполненных работ</option>
+      </select>
+    </div>
+
+    <div id="formFields"></div>
+
+    <div class="btn-group">
+      <button class="btn" id="generateBtn" onclick="generateDocument()">Сгенерировать</button>
+      <button class="btn btn-outline" id="downloadPdfBtn" onclick="exportToPDF()" disabled>📥 Сохранить в PDF</button>
+    </div>
+
+    <div id="statusMessage" class="notice notice-success hidden" style="margin-top: 16px;"></div>
+  </div>
+
+  <div class="preview-container">
+    <div class="preview-header">
+      <h2 style="font-size: 1.1rem; margin: 0; border: none; padding: 0;">Предпросмотр</h2>
+      <span id="previewStatus" style="font-size: 0.85rem; color: var(--text-muted);">Заполните форму</span>
+    </div>
+    <div class="document-body" id="documentPreview">
+      <p style="text-align: center; color: var(--text-muted); margin-top: 40px;">Здесь появится ваш документ.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- УПРАВЛЕНИЕ ТЕМОЙ ---
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeButton(savedTheme);
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeButton(newTheme);
+  }
+
+  function updateThemeButton(theme) {
+    const icon = document.getElementById('themeIcon');
+    const text = document.getElementById('themeText');
+    if (theme === 'dark') {
+      icon.textContent = '☀️';
+      text.textContent = 'Светлая тема';
+    } else {
+      icon.textContent = '🌙';
+      text.textContent = 'Темная тема';
+    }
+  }
+
+  // --- МОДЕЛЬ ДАННЫХ ---
+  const templates = {
+    contract: {
+      id: 'contract', name: 'Договор подряда',
+      fields: [
+        { key: 'city', label: 'Город', type: 'text', required: true, tooltip: 'Город заключения' },
+        { key: 'date', label: 'Дата', type: 'date', required: true, tooltip: 'Дата подписания' },
+        { key: 'customerName', label: 'ФИО Заказчика', type: 'text', required: true, tooltip: 'Полное имя' },
+        { key: 'customerPassport', label: 'Паспорт Заказчика', type: 'text', required: true, tooltip: 'Серия и номер' },
+        { key: 'executorName', label: 'ФИО Исполнителя', type: 'text', required: true, tooltip: 'Полное имя' },
+        { key: 'executorPassport', label: 'Паспорт Исполнителя', type: 'text', required: true, tooltip: 'Серия и номер' },
+        { key: 'subject', label: 'Предмет договора', type: 'textarea', required: true, tooltip: 'Суть работ' },
+        { key: 'amount', label: 'Сумма (руб.)', type: 'number', required: true, tooltip: 'Стоимость' },
+        { key: 'deadline', label: 'Срок выполнения', type: 'text', required: true, tooltip: 'Например: до 31.12.2025' }
+      ],
+      bodyHTML: `
+        <h1>ДОГОВОР ПОДРЯДА</h1>
+        <p style="text-align: center; margin-bottom: 20px;">г. {{city}} &nbsp;&nbsp;&nbsp; «{{date}}»</p>
+        <p>Гражданин <strong>{{customerName}}</strong>, паспорт: {{customerPassport}}, именуемый в дальнейшем «Заказчик», с одной стороны, и гражданин <strong>{{executorName}}</strong>, паспорт: {{executorPassport}}, именуемый в дальнейшем «Исполнитель», с другой стороны, заключили настоящий договор о нижеследующем:</p>
+        <h3>1. Предмет договора</h3>
+        <p>1.1. Исполнитель обязуется выполнить следующие работы: {{subject}}, а Заказчик обязуется принять и оплатить результат.</p>
+        <h3>2. Стоимость и порядок расчетов</h3>
+        <p>2.1. Стоимость работ составляет <strong>{{amount}} руб.</strong></p>
+        <h3>3. Сроки выполнения</h3>
+        <p>3.1. Срок выполнения работ: <strong>{{deadline}}</strong>.</p>
+        <h3>4. Подписи сторон</h3>
+        <p><strong>Заказчик:</strong> _________________ / {{customerName}} /</p>
+        <p><strong>Исполнитель:</strong> _________________ / {{executorName}} /</p>
+      `
+    },
+    nda: {
+      id: 'nda', name: 'Соглашение о неразглашении (NDA)',
+      fields: [
+        { key: 'city', label: 'Город', type: 'text', required: true, tooltip: 'Место подписания' },
+        { key: 'date', label: 'Дата', type: 'date', required: true, tooltip: 'Дата подписания' },
+        { key: 'party1', label: 'Сторона 1 (Раскрывающая)', type: 'text', required: true, tooltip: 'Кто передает данные' },
+        { key: 'party2', label: 'Сторона 2 (Получающая)', type: 'text', required: true, tooltip: 'Кто получает данные' },
+        { key: 'subject', label: 'Конфиденциальная информация', type: 'textarea', required: true, tooltip: 'Что нельзя разглашать' },
+        { key: 'penalty', label: 'Штраф (руб.)', type: 'number', required: false, tooltip: 'Сумма штрафа' },
+        { key: 'term', label: 'Срок действия', type: 'text', required: true, tooltip: 'Например: 3 года' }
+      ],
+      bodyHTML: `
+        <h1>СОГЛАШЕНИЕ О НЕРАЗГЛАШЕНИИ (NDA)</h1>
+        <p style="text-align: center; margin-bottom: 20px;">г. {{city}} &nbsp;&nbsp;&nbsp; «{{date}}»</p>
+        <p><strong>Сторона 1:</strong> {{party1}}</p>
+        <p><strong>Сторона 2:</strong> {{party2}}</p>
+        <p>Стороны договорились о следующем:</p>
+        <h3>1. Конфиденциальная информация</h3>
+        <p>1.1. Сторона 1 передает Стороне 2 информацию: <strong>{{subject}}</strong>, которая считается конфиденциальной.</p>
+        <h3>2. Обязательства сторон</h3>
+        <p>2.1. Сторона 2 обязуется не разглашать указанную информацию третьим лицам без письменного согласия Стороны 1.</p>
+        <h3>3. Ответственность</h3>
+        <p>3.1. За разглашение информации Сторона 2 выплачивает штраф в размере <strong>{{penalty}} руб.</strong></p>
+        <h3>4. Срок действия</h3>
+        <p>4.1. Соглашение действует в течение <strong>{{term}}</strong>.</p>
+        <h3>5. Подписи сторон</h3>
+        <p><strong>Сторона 1:</strong> _________________ / {{party1}} /</p>
+        <p><strong>Сторона 2:</strong> _________________ / {{party2}} /</p>
+      `
+    },
+    act: {
+      id: 'act', name: 'Акт выполненных работ',
+      fields: [
+        { key: 'city', label: 'Город', type: 'text', required: true, tooltip: 'Город составления' },
+        { key: 'date', label: 'Дата', type: 'date', required: true, tooltip: 'Дата акта' },
+        { key: 'contractNumber', label: 'Номер договора', type: 'text', required: true, tooltip: 'Основание' },
+        { key: 'customerName', label: 'Заказчик', type: 'text', required: true, tooltip: 'ФИО/Компания' },
+        { key: 'executorName', label: 'Исполнитель', type: 'text', required: true, tooltip: 'ФИО/Компания' },
+        { key: 'serviceList', label: 'Перечень работ', type: 'textarea', required: true, tooltip: 'Что сделано' },
+        { key: 'amount', label: 'Стоимость (руб.)', type: 'number', required: true, tooltip: 'Сумма' }
+      ],
+      bodyHTML: `
+        <h1>АКТ ВЫПОЛНЕННЫХ РАБОТ</h1>
+        <p style="text-align: center; margin-bottom: 20px;">к Договору № {{contractNumber}}</p>
+        <p style="text-align: center; margin-bottom: 20px;">г. {{city}} &nbsp;&nbsp;&nbsp; «{{date}}»</p>
+        <p>Мы, нижеподписавшиеся, <strong>Заказчик:</strong> {{customerName}}, и <strong>Исполнитель:</strong> {{executorName}}, составили настоящий акт о том, что:</p>
+        <h3>1. Выполненные работы</h3>
+        <p>Исполнитель выполнил следующие работы: <strong>{{serviceList}}</strong>.</p>
+        <h3>2. Стоимость</h3>
+        <p>Общая стоимость выполненных работ составляет <strong>{{amount}} руб.</strong></p>
+        <h3>3. Претензии</h3>
+        <p>Заказчик претензий по объему, качеству и срокам оказания услуг не имеет.</p>
+        <h3>4. Подписи сторон</h3>
+        <p><strong>Заказчик:</strong> _________________ / {{customerName}} /</p>
+        <p><strong>Исполнитель:</strong> _________________ / {{executorName}} /</p>
+      `
+    }
+  };
+
+  // --- ГЛАВНЫЕ ФУНКЦИИ ---
+  function changeTemplate() {
+    const templateId = document.getElementById('templateSelect').value;
+    const template = templates[templateId];
+    renderForm(template);
+    document.getElementById('documentPreview').innerHTML = `<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">Заполните форму и нажмите «Сгенерировать»</p>`;
+    document.getElementById('downloadPdfBtn').disabled = true;
+    document.getElementById('previewStatus').textContent = 'Заполните форму';
+  }
+
+  function renderForm(template) {
+    const container = document.getElementById('formFields');
+    container.innerHTML = '';
+    
+    template.fields.forEach(field => {
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      
+      let tooltipHTML = field.tooltip ? `<span class="tooltip-icon" data-tip="${field.tooltip}">?</span>` : '';
+      
+      let inputHTML = '';
+      if (field.type === 'textarea') {
+        inputHTML = `<textarea id="field_${field.key}" placeholder="Введите ${field.label.toLowerCase()}"></textarea>`;
+      } else {
+        inputHTML = `<input type="${field.type}" id="field_${field.key}" placeholder="Введите ${field.label.toLowerCase()}">`;
+      }
+
+      div.innerHTML = `
+        <label>${field.label} ${field.required ? '<span class="req">*</span>' : ''} ${tooltipHTML}</label>
+        ${inputHTML}
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function generateDocument() {
+    const templateId = document.getElementById('templateSelect').value;
+    const template = templates[templateId];
+    const values = {};
+    let isValid = true;
+
+    template.fields.forEach(field => {
+      const input = document.getElementById(`field_${field.key}`);
+      const value = input.value.trim();
+      
+      if (field.required && !value) {
+        input.style.borderColor = 'var(--danger)';
+        isValid = false;
+      } else {
+        input.style.borderColor = 'var(--border)';
+        values[field.key] = value || '[не заполнено]';
+      }
+    });
+
+    if (!isValid) {
+      alert('Пожалуйста, заполните все обязательные поля');
+      return;
+    }
+
+    const filledHTML = fillTemplate(template.bodyHTML, values);
+    
+    // Устанавливаем стили для PDF принудительно
+    const preview = document.getElementById('documentPreview');
+    preview.innerHTML = filledHTML;
+    preview.style.color = '#000';
+    preview.style.background = '#fff';
+    
+    document.getElementById('downloadPdfBtn').disabled = false;
+    document.getElementById('previewStatus').textContent = 'Готов к скачиванию';
+    
+    const statusDiv = document.getElementById('statusMessage');
+    statusDiv.textContent = '✅ Документ успешно сгенерирован!';
+    statusDiv.classList.remove('hidden');
+    setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+  }
+
+  function fillTemplate(html, values) {
+    let result = html;
+    for (const [key, value] of Object.entries(values)) {
+      const safeValue = value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      result = result.replace(new RegExp(`{{${key}}}`, 'g'), `<span class="filled">${safeValue}</span>`);
+    }
+    result = result.replace(/{{.*?}}/g, '<span class="placeholder">[не заполнено]</span>');
+    return result;
+  }
+
+  // --- PDF ГЕНЕРАЦИЯ С ЦЕНТРИРОВАНИЕМ И УМЕНЬШЕННЫМ ТЕКСТОМ ---
+  async function exportToPDF() {
+    const preview = document.getElementById('documentPreview');
+    if (!preview.innerHTML.trim() || preview.innerHTML.includes('Здесь появится ваш документ')) {
+      alert('Сначала сгенерируйте документ!');
+      return;
+    }
+
+    const btn = document.getElementById('downloadPdfBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Генерация PDF...';
+    btn.disabled = true;
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      // Создаем временный контейнер для рендеринга PDF
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '700px'; // Фиксированная ширина для правильного перевода в PDF
+      tempDiv.style.padding = '40px';
+      tempDiv.style.backgroundColor = '#ffffff';
+      tempDiv.style.color = '#000000';
+      tempDiv.style.fontFamily = 'Times New Roman, serif'; // Используем классический шрифт для документов
+      tempDiv.style.fontSize = '12pt'; // Уменьшенный шрифт
+      tempDiv.style.lineHeight = '1.4';
+      
+      // Копируем HTML документа
+      tempDiv.innerHTML = preview.innerHTML;
+      
+      // Переопределяем стили заголовков для PDF
+      tempDiv.querySelectorAll('h1').forEach(h1 => {
+        h1.style.textAlign = 'center';
+        h1.style.fontSize = '16pt';
+        h1.style.marginBottom = '20px';
+      });
+      tempDiv.querySelectorAll('h3').forEach(h3 => {
+        h3.style.fontSize = '13pt';
+        h3.style.marginTop = '16px';
+        h3.style.marginBottom = '8px';
+      });
+      tempDiv.querySelectorAll('p').forEach(p => {
+        p.style.textAlign = 'justify';
+        p.style.marginBottom = '8px';
+      });
+      
+      document.body.appendChild(tempDiv);
+      
+      // Рендерим в canvas
+      const canvas = await html2canvas(tempDiv, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Добавляем в PDF
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      doc.save(`Документ_${new Date().toISOString().slice(0,10)}.pdf`);
+      
+      document.body.removeChild(tempDiv); // Удаляем временный контейнер
+      
+    } catch (error) {
+      console.error(error);
+      alert('Ошибка при генерации PDF. Попробуйте еще раз.');
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // --- СОХРАНЕНИЕ/ИМПОРТ ---
+  function saveTemplate() {
+    const templateId = document.getElementById('templateSelect').value;
+    const values = {};
+    
+    templates[templateId].fields.forEach(field => {
+      const input = document.getElementById(`field_${field.key}`);
+      if (input) values[field.key] = input.value;
+    });
+
+    const dataToSave = { templateId, values, savedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `template_${templateId}_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    localStorage.setItem('lastTemplate', JSON.stringify(dataToSave));
+    alert('Шаблон экспортирован!');
+  }
+
+  function importTemplate() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (!data.templateId || !templates[data.templateId]) throw new Error('Неизвестный шаблон');
+          
+          document.getElementById('templateSelect').value = data.templateId;
+          changeTemplate();
+          
+          setTimeout(() => {
+            for (const [key, value] of Object.entries(data.values)) {
+              const inputField = document.getElementById(`field_${key}`);
+              if (inputField) inputField.value = value;
+            }
+            generateDocument();
+            alert('Шаблон успешно импортирован!');
+          }, 100);
+        } catch (err) {
+          alert('Ошибка при чтении файла: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  // --- ИНИЦИАЛИЗАЦИЯ ---
+  window.onload = () => {
+    initTheme();
+    changeTemplate();
+    
+    const saved = localStorage.getItem('lastTemplate');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.templateId && templates[data.templateId]) {
+          document.getElementById('templateSelect').value = data.templateId;
+          changeTemplate();
+          setTimeout(() => {
+            for (const [key, value] of Object.entries(data.values)) {
+              const inputField = document.getElementById(`field_${key}`);
+              if (inputField) inputField.value = value;
+            }
+          }, 50);
+        }
+      } catch (e) { console.warn('Не удалось загрузить сохраненный шаблон'); }
+    }
+  };
+</script>
+
+</body>
+</html>
